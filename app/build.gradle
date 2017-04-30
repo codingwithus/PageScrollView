@@ -1,0 +1,22 @@
+apply plugin: 'com.android.application'
+apply from: '../base.gradle'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+android {
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile(name: 'support-v4-23.4.0', ext: 'aar')
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+}

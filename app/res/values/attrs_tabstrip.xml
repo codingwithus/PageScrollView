@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="HorizontalSlideTab">
+        <!--tab item 的背景-->
+        <attr name="tabItemBackground" format="reference"/>
+        <attr name="tabItemBackgroundFirst" format="reference"/>
+        <attr name="tabItemBackgroundLast" format="reference"/>
+        <attr name="tabItemBackgroundFull" format="reference"/>
+
+        <!--底部指示线-->
+        <attr name="tabIndicatorColor" format="color"/>
+        <attr name="tabIndicatorHeight" format="dimension"/>
+
+        <!--顶部水平分界线-->
+        <attr name="tabTopLineColor" format="color"/>
+        <attr name="tabTopLineHeight" format="dimension"/>
+
+        <!--底部水平分界线-->
+        <attr name="tabBottomLineColor" format="color"/>
+        <attr name="tabBottomLineHeight" format="dimension"/>
+
+        <!-- item 之间垂直分割线-->
+        <attr name="tabItemDividerColor" format="color"/>
+        <attr name="tabItemDividerWidth" format="dimension"/>
+        <attr name="tabItemDividerPadding" format="dimension"/>
+
+
+        <!-- item 的最小 Padding 设置-->
+        <attr name="tabItemMinPaddingHorizonal" format="dimension"/>
+        <attr name="tabItemMinPaddingTop" format="dimension"/>
+        <attr name="tabItemMinPaddingBottom" format="dimension"/>
+
+        <!--item文字大写开-->
+        <attr name="tabItemTextCaps" format="boolean"/>
+
+        <!--item 文字颜色-->
+        <attr name="tabItemTextColor" format="reference"/>
+
+        <!-- 是否item 按权重展开 -->
+        <attr name="tabItemShouldExpand" format="boolean"/>
+
+        <!-- tab 初始偏移量-->
+        <attr name="tabScrollOffset" format="dimension"/>
+    </declare-styleable>
+</resources>

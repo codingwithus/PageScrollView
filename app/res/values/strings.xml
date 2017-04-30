@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">PageScrollView</string>
+    <item name="key_special_0" type="id" />
+</resources>

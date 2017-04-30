@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="PageScrollView">
+        <attr name="android:orientation"/>
+        <attr name="android:gravity"/>
+        <attr name="android:layout_gravity"/>
+        <attr name="android:maxWidth"/>
+        <attr name="android:maxHeight"/>
+        <attr name="middleMargin" format="dimension"/>
+        <attr name="sizeFixedPercent" format="float"/>
+        <attr name="overFlingDistance" format="dimension"/>
+        <attr name="pageViewStyle" format="boolean"/>
+        <attr name="floatViewStart" format="integer"/>
+        <attr name="floatViewEnd" format="integer"/>
+        <attr name="childCenter" format="boolean"/>
+    </declare-styleable>
+</resources>
