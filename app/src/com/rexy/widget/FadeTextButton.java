@@ -192,7 +192,6 @@ public class FadeTextButton extends TextView {
                 mCurrentAlpha = mCurrentAlpha * mCurrentAlpha;
                 setAlpha(mCurrentAlpha);
             }
-
         }
     }
 }

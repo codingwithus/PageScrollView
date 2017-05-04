@@ -47,9 +47,9 @@ public class PageScrollView extends ViewGroup {
     protected int mFloatViewStart = -1;
     protected int mFloatViewEnd = -1;
     protected boolean isChildCenter = false;
-    protected boolean mAttachLayouted = false;
+    protected boolean mAttachLayout = false;
 
-    protected int mSwapFloatViewIndex = -1;
+    protected int mSwapViewIndex = -1;
     protected int mFloatViewStartIndex = -1;
     protected int mFloatViewEndIndex = -1;
 
@@ -109,7 +109,7 @@ public class PageScrollView extends ViewGroup {
     }
 
     private void print(CharSequence msg) {
-        Log.d("rexy_pagescroll", String.valueOf(msg));
+        Log.d("PageScrollView", String.valueOf(msg));
     }
 
     private void init(Context context, AttributeSet attributeSet) {
@@ -151,14 +151,14 @@ public class PageScrollView extends ViewGroup {
                 resetFloatViewOffset(mFloatViewStartIndex, oldHorizontal);
                 resetFloatViewOffset(mFloatViewEndIndex, oldHorizontal);
                 mFloatViewStartIndex = -1;
-                mSwapFloatViewIndex = -1;
+                mSwapViewIndex = -1;
                 mFloatViewStartMode = 0;
                 mFloatViewEndIndex = -1;
                 mFloatViewEndMode = 0;
             }
             mScrollInfo.set(mCurrItem, 0, 0, isPageViewStyle ? 1 : 0);
             scrollTo(0, 0);
-            mAttachLayouted = false;
+            mAttachLayout = false;
             requestLayout();
         }
     }
@@ -218,7 +218,7 @@ public class PageScrollView extends ViewGroup {
             if (mFloatViewStart >= 0) {
                 mNeedResolveFloatOffset = true;
             }
-            mSwapFloatViewIndex = -1;
+            mSwapViewIndex = -1;
             mFloatViewStartIndex = -1;
             mFloatViewStartMode = 0;
             requestLayout();
@@ -253,11 +253,11 @@ public class PageScrollView extends ViewGroup {
         }
     }
 
-    public void setOverflingDistance(int overflingDistance) {
-        mOverFlingDistance = overflingDistance;
+    public void setOverFlingDistance(int overFlingDistance) {
+        mOverFlingDistance = overFlingDistance;
     }
 
-    public int getOverflingDistance() {
+    public int getOverFlingDistance() {
         return mOverFlingDistance;
     }
 
@@ -278,7 +278,7 @@ public class PageScrollView extends ViewGroup {
     public void setChildCenter(boolean centerChild) {
         if (this.isChildCenter != centerChild) {
             this.isChildCenter = centerChild;
-            if (mAttachLayouted) {
+            if (mAttachLayout) {
                 requestLayout();
             }
         }
@@ -328,8 +328,9 @@ public class PageScrollView extends ViewGroup {
         if (mPageTransformer != transformer) {
             boolean needResetTransformer = mPageTransformer != null;
             mPageTransformer = transformer;
-            if (mAttachLayouted) {
+            if (mAttachLayout) {
                 if (needResetTransformer && mPageTransformer == null) {
+                    //TODO NEED CLEAN ANY PRE TRANSFORMER FOR ALL CHILD
                     requestLayout();
                 }
                 if (mPageTransformer != null) {
@@ -693,8 +694,8 @@ public class PageScrollView extends ViewGroup {
             }
             onLayoutVertical(baseLeft, baseTop, height - top - bottom);
         }
-        if (mAttachLayouted == false) {
-            mAttachLayouted = true;
+        if (mAttachLayout == false) {
+            mAttachLayout = true;
             if (mScrollInfo.left >= 0 || mPrevItem == -1) {
                 scrollAfterLayout();
             }
@@ -704,8 +705,8 @@ public class PageScrollView extends ViewGroup {
                 mNeedResolveFloatOffset = false;
                 boolean horizontal = mOrientation == HORIZONTAL;
                 int scrollLength = horizontal ? getScrollX() : getScrollY();
-                if (mFloatViewStartIndex >= 0 && mSwapFloatViewIndex < 0) {
-                    mSwapFloatViewIndex = calculateSwapFirstFloatViewIndex(scrollLength, horizontal);
+                if (mFloatViewStartIndex >= 0 && mSwapViewIndex < 0) {
+                    mSwapViewIndex = calculateSwapViewIndex(scrollLength, horizontal);
                 }
                 if (mFloatViewStartMode == FLOAT_VIEW_SCROLL || mFloatViewEndMode == FLOAT_VIEW_SCROLL) {
                     resolveFloatViewOffset(scrollLength, horizontal);
@@ -806,16 +807,16 @@ public class PageScrollView extends ViewGroup {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        mAttachLayouted = false;
+        mAttachLayout = false;
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        mAttachLayouted = false;
+        mAttachLayout = false;
     }
 
-    protected int calculateSwapFirstFloatViewIndex(int scrolled, boolean horizontal) {
+    protected int calculateSwapViewIndex(int scrolled, boolean horizontal) {
         if (mFloatViewStartIndex >= 0) {
             int count = getChildCount(), baseLine;
             View view = getChildAt(mFloatViewStartIndex);
@@ -848,7 +849,7 @@ public class PageScrollView extends ViewGroup {
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
-        boolean swapIndexEnable = mFloatViewStartIndex >= 0 && mSwapFloatViewIndex >= 0;
+        boolean swapIndexEnable = mFloatViewStartIndex >= 0 && mSwapViewIndex >= 0;
         if (swapIndexEnable && isChildrenDrawingOrderEnabled() == false) {
             setChildrenDrawingOrderEnabled(true);
         } else {
@@ -862,11 +863,11 @@ public class PageScrollView extends ViewGroup {
     @Override
     protected int getChildDrawingOrder(int childCount, int i) {
         int order = i;
-        if (mFloatViewStartIndex >= 0 && mSwapFloatViewIndex >= 0) {
+        if (mFloatViewStartIndex >= 0 && mSwapViewIndex >= 0) {
             if (mFloatViewStartIndex == i) {
-                return mSwapFloatViewIndex;
+                return mSwapViewIndex;
             }
-            if (i == mSwapFloatViewIndex) {
+            if (i == mSwapViewIndex) {
                 return mFloatViewStartIndex;
             }
         }
@@ -1085,8 +1086,8 @@ public class PageScrollView extends ViewGroup {
         setScrollState(ViewPager.SCROLL_STATE_IDLE);
     }
 
-    public boolean isAttachLayouted() {
-        return mAttachLayouted;
+    public boolean isAttachLayoutFinished() {
+        return mAttachLayout;
     }
 
     private boolean isFlingAllowed(int scroll, int scrollRange, int velocity) {
@@ -1157,7 +1158,7 @@ public class PageScrollView extends ViewGroup {
     }
 
     public void scrollTo(int index, int offset, int duration) {
-        if (mAttachLayouted) {
+        if (mAttachLayout) {
             scrollTo(getPageItemView(index), offset, duration, false);
         } else {
             if (index >= 0) {
@@ -1167,7 +1168,7 @@ public class PageScrollView extends ViewGroup {
     }
 
     public void scrollToCenter(int index, int offset, int duration) {
-        if (mAttachLayouted) {
+        if (mAttachLayout) {
             scrollTo(getPageItemView(index), offset, duration, true);
         } else {
             if (index >= 0) {
@@ -1179,7 +1180,7 @@ public class PageScrollView extends ViewGroup {
     public void scrollTo(View child, int offset, int duration, boolean childCenter) {
         int pageIndex = indexOfPageItemView(child);
         if (pageIndex == -1) return;
-        if (mAttachLayouted) {
+        if (mAttachLayout) {
             if (mScrollInfo.left >= 0) {
                 mScrollInfo.set(-1, -1, -1, -1);
             }
@@ -1385,7 +1386,7 @@ public class PageScrollView extends ViewGroup {
         boolean horizontal = mOrientation == HORIZONTAL;
         int scrollLength = horizontal ? l : t;
         if (mFloatViewStartIndex >= 0) {
-            mSwapFloatViewIndex = calculateSwapFirstFloatViewIndex(scrollLength, horizontal);
+            mSwapViewIndex = calculateSwapViewIndex(scrollLength, horizontal);
         }
         if (mPageHeaderView != null || mPageFooterView != null) {
             resolvePageHeaderFooterOffset(scrollLength, horizontal);
@@ -1597,7 +1598,7 @@ public class PageScrollView extends ViewGroup {
         super.removeAllViewsInLayout();
         mCurrItem = 0;
         mPrevItem = -1;
-        mAttachLayouted = false;
+        mAttachLayout = false;
         mScrollInfo.set(-1, -1, -1, -1);
     }
 

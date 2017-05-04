@@ -8,11 +8,10 @@ import android.widget.TextView;
 
 
 public class CheckText extends TextView implements Checkable {
-    private static int FLAG_CHECK_ABLE = 1, FLAG_CLICK_CHECK = 2;
     protected boolean mChecked = false;
     private static final int[] CHECKED_STATE_SET = {android.R.attr.state_checked};
-    protected boolean mCheckEnable=true;
-    protected boolean mClickCheckEnable =false;
+    protected boolean mCheckEnable = true;
+    protected boolean mClickCheckEnable = false;
     CharSequence mTextOn, mTextOff;
 
 
@@ -37,7 +36,7 @@ public class CheckText extends TextView implements Checkable {
     }
 
     public void setCheckAble(boolean checkable) {
-        mCheckEnable=checkable;
+        mCheckEnable = checkable;
     }
 
     public boolean isCheckAble() {
@@ -45,7 +44,7 @@ public class CheckText extends TextView implements Checkable {
     }
 
     public void setClickCheckAble(boolean checkable) {
-        mClickCheckEnable =checkable;
+        mClickCheckEnable = checkable;
     }
 
     public boolean isClickCheckAble() {
