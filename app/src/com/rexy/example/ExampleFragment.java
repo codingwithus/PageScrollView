@@ -22,7 +22,8 @@ public class ExampleFragment extends Fragment implements CompoundButton.OnChecke
     protected float mDensity;
     protected PageScrollView mPageScrollView;
     protected boolean mContentVertical;
-    protected TestPageTransformer mPageTransformer = new TestPageTransformer(true);
+    protected TestPageTransformer mPageTransformer = new TestPageTransformer();
+
     public static void log(CharSequence msg) {
         Log.d("PageScrollView", String.valueOf(msg));
     }
@@ -69,8 +70,8 @@ public class ExampleFragment extends Fragment implements CompoundButton.OnChecke
 
     protected void onFragmentVisibleChanged(boolean visible, boolean fromLifecycle) {
         if (visible) {
-            if (getActivity() instanceof PageLayoutExampleActivity) {
-                ((PageLayoutExampleActivity) getActivity()).setViewOrientation(mContentVertical);
+            if (getActivity() instanceof ExampleActivity) {
+                ((ExampleActivity) getActivity()).setViewOrientation(mContentVertical);
             }
         }
     }
@@ -90,7 +91,6 @@ public class ExampleFragment extends Fragment implements CompoundButton.OnChecke
     protected boolean setContentOrientationInner(boolean vertical, boolean init) {
         if (mContentVertical != vertical) {
             mContentVertical = vertical;
-            mPageTransformer.setOrientation(vertical);
             mPageScrollView.setOrientation(vertical ? PageScrollView.VERTICAL : PageScrollView.HORIZONTAL);
             if (init) {
                 adjustTransformAnimation(mToggleAnim.isChecked());

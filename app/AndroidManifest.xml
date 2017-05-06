@@ -9,7 +9,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name="com.rexy.example.PageLayoutExampleActivity"
+            android:name="com.rexy.example.ExampleActivity"
             android:configChanges="locale|fontScale|orientation|keyboardHidden|screenSize"
             android:screenOrientation="portrait">
             <intent-filter>

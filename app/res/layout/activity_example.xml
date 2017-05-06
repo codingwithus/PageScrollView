@@ -17,7 +17,7 @@
         android:showDividers="middle">
 
         <com.rexy.widget.FadeTextButton
-            android:id="@+id/toggleViewPage"
+            android:id="@+id/toggleViewPager"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"

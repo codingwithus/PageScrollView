@@ -1,7 +1,6 @@
 package com.rexy.example;
 
 import android.os.Bundle;
-import android.support.v4.view.ViewPager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,7 +25,7 @@ public class ExamplePageViewFragment extends ExampleFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.fragment_example_viewpage, container, false);
+        View root = inflater.inflate(R.layout.fragment_example_viewpager, container, false);
         initView(root);
         return root;
     }
@@ -42,19 +41,19 @@ public class ExamplePageViewFragment extends ExampleFragment {
         initPageTab(mPageScrollView, mSlideTab);
     }
 
-    private void initPageTab(final PageScrollView pageLayout, final HorizontalSlideTab tabHost) {
+    private void initPageTab(final PageScrollView scrollView, final HorizontalSlideTab tabHost) {
         final View.OnClickListener pageClick1 = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int index = pageLayout.indexOfPageItemView(v);
+                int index = scrollView.indexOfItemView(v);
                 if (index >= 0) {
-                    pageLayout.scrollToCenter(index, 0, -1);
+                    scrollView.scrollToCentre(index, 0, -1);
                 }
             }
         };
-        int pageItemCount = pageLayout.getPageItemCount();
+        int pageItemCount = scrollView.getItemCount();
         for (int i = 0; i < pageItemCount; i++) {
-            View child = pageLayout.getPageItemView(i);
+            View child = scrollView.getItemView(i);
             child.setOnClickListener(pageClick1);
             if (child instanceof TextView) {
                 CharSequence text = ((TextView) child).getText();
@@ -65,24 +64,28 @@ public class ExamplePageViewFragment extends ExampleFragment {
         tabHost.setTabClickListener(new HorizontalSlideTab.ITabClickEvent() {
             @Override
             public boolean onTabClicked(HorizontalSlideTab parent, View cur, int curPos, View pre, int prePos) {
-                pageLayout.scrollToCenter(curPos, 0, -1);
+                scrollView.scrollToCentre(curPos, 0, -1);
                 return false;
             }
         });
-        pageLayout.setPageListener(new ViewPager.OnPageChangeListener() {
+        scrollView.setOnPageChangeListener(new PageScrollView.OnPageChangeListener() {
+            @Override
+            public void onScrollChanged(int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+            }
+
+            @Override
+            public void onScrollStateChanged(int state, int oldState) {
+                tabHost.callPageScrollStateChanged(state, scrollView.getCurrentItem());
+            }
+
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
                 tabHost.callPageScrolled(position, positionOffset);
             }
 
             @Override
-            public void onPageSelected(int position) {
+            public void onPageSelected(int position, int oldPosition) {
                 tabHost.callPageSelected(position);
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-                tabHost.callPageScrollStateChanged(state, pageLayout.getCurrentItem());
             }
         });
     }

@@ -14,10 +14,10 @@ import com.rexy.pagescrollview.R;
  * Created by rexy on 17/4/11.
  */
 
-public class PageLayoutExampleActivity extends FragmentActivity implements View.OnClickListener {
+public class ExampleActivity extends FragmentActivity implements View.OnClickListener {
     TextView mToggleViewPage;
     TextView mToggleOrientation;
-    String[] mFragmentTags = new String[]{"ScrollView", "ViewPage"};
+    String[] mFragmentTags = new String[]{"ScrollView", "ViewPager"};
     int mVisibleFragmentIndex = 1;
 
     boolean mViewAsScrollView;
@@ -28,7 +28,7 @@ public class PageLayoutExampleActivity extends FragmentActivity implements View.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example);
-        mToggleViewPage = (TextView) findViewById(R.id.toggleViewPage);
+        mToggleViewPage = (TextView) findViewById(R.id.toggleViewPager);
         mToggleOrientation = (TextView) findViewById(R.id.toggleOrientation);
         mToggleViewPage.setOnClickListener(this);
         mToggleOrientation.setOnClickListener(this);

@@ -1,26 +1,19 @@
 package com.rexy.widget;
 
-import android.support.v4.view.ViewPager;
 import android.view.View;
 
 /**
  * Created by rexy on 17/4/12.
  */
 
-public class TestPageTransformer implements ViewPager.PageTransformer {
+public class TestPageTransformer implements PageScrollView.PageTransformer {
 
-    private static final float MIN_SCALE = 0.75f;
-    private static final float MIN_ALPHA = 0.35f;
-    private boolean isVertical = false, mAdjustTranslate = false;
-    public TestPageTransformer(boolean isVertical){
-        this.isVertical=isVertical;
-    }
+    private static final float MIN_SCALE = 0.7f;
+    private static final float MIN_ALPHA = 0.3f;
+    private boolean mAdjustTranslate = false;
 
-    public void setOrientation(boolean isVertical) {
-        this.isVertical = isVertical;
-    }
-    public void transformPage(View view, float position) {
-        int pageSize = isVertical?view.getHeight():view.getWidth();
+    public void transformPage(View view, float position, boolean horizontal) {
+        int pageSize = horizontal ? view.getWidth() : view.getHeight();
         if (position < -1) { // [-Infinity,-1)way off-screen to the left
             view.setAlpha(MIN_ALPHA);
             view.setScaleX(MIN_SCALE);
@@ -31,16 +24,16 @@ public class TestPageTransformer implements ViewPager.PageTransformer {
             if (mAdjustTranslate) {
                 float horizontalMargin = pageSize * (1 - scale) / 2;
                 if (position > 0) {
-                    if (isVertical) {
-                        view.setTranslationY(horizontalMargin);
-                    } else {
+                    if (horizontal) {
                         view.setTranslationX(horizontalMargin);
+                    } else {
+                        view.setTranslationY(horizontalMargin);
                     }
                 } else {
-                    if (isVertical) {
-                        view.setTranslationY(-horizontalMargin);
-                    } else {
+                    if (horizontal) {
                         view.setTranslationX(-horizontalMargin);
+                    } else {
+                        view.setTranslationY(-horizontalMargin);
                     }
                 }
             }
@@ -51,6 +44,20 @@ public class TestPageTransformer implements ViewPager.PageTransformer {
             view.setAlpha(MIN_ALPHA);
             view.setScaleX(MIN_SCALE);
             view.setScaleY(MIN_SCALE);
+        }
+    }
+
+    @Override
+    public void recoverTransformPage(View view, boolean horizontal) {
+        view.setAlpha(1);
+        view.setScaleX(1);
+        view.setScaleY(1);
+        if (mAdjustTranslate) {
+            if (horizontal) {
+                view.setTranslationX(0);
+            } else {
+                view.setTranslationY(0);
+            }
         }
     }
 }

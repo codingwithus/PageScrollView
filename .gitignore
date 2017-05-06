@@ -48,3 +48,5 @@ build/
 IGNORE/
 reports/
 node_modules/
+
+IGNORE/

@@ -9,9 +9,9 @@
         <attr name="middleMargin" format="dimension"/>
         <attr name="sizeFixedPercent" format="float"/>
         <attr name="overFlingDistance" format="dimension"/>
-        <attr name="pageViewStyle" format="boolean"/>
-        <attr name="floatViewStart" format="integer"/>
-        <attr name="floatViewEnd" format="integer"/>
+        <attr name="viewPagerStyle" format="boolean"/>
+        <attr name="floatViewStartIndex" format="integer"/>
+        <attr name="floatViewEndIndex" format="integer"/>
         <attr name="childCenter" format="boolean"/>
     </declare-styleable>
 </resources>

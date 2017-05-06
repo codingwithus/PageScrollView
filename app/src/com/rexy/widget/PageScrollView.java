@@ -8,7 +8,6 @@ import android.graphics.Rect;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewConfigurationCompat;
-import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -19,6 +18,7 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.animation.Interpolator;
+import android.widget.LinearLayout;
 import android.widget.OverScroller;
 
 import com.rexy.pagescrollview.R;
@@ -30,6 +30,10 @@ import com.rexy.pagescrollview.R;
  * @date: 2017-04-25 09:32
  */
 public class PageScrollView extends ViewGroup {
+    public static final int SCROLL_STATE_IDLE = 0;
+    public static final int SCROLL_STATE_DRAGGING = 1;
+    public static final int SCROLL_STATE_SETTLING = 2;
+
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
     private static final int MAX_DURATION = 600;
@@ -41,7 +45,7 @@ public class PageScrollView extends ViewGroup {
     protected int mMaxHeight = -1;
     protected int mMiddleMargin = 0;
     protected float mSizeFixedPercent = 0;
-    protected boolean isPageViewStyle = false;
+    protected boolean isViewPagerStyle = false;
 
 
     protected int mFloatViewStart = -1;
@@ -73,8 +77,8 @@ public class PageScrollView extends ViewGroup {
     int mCurrItem = 0;
     int mPrevItem = -1;
     int mVirtualCount = 0;
-    int mScrollState = ViewPager.SCROLL_STATE_IDLE;
-    boolean mIsBeingDraged = false;
+    int mScrollState = SCROLL_STATE_IDLE;
+    boolean mIsBeingDragged = false;
     boolean mScrollerUsed = false;
     boolean mNeedResolveFloatOffset = false;
 
@@ -85,8 +89,10 @@ public class PageScrollView extends ViewGroup {
     VelocityTracker mVelocityTracker = null;
     OverScroller mScrollerScrollView = null;
     OverScroller mScrollerPageView = null;
-    private ViewPager.PageTransformer mPageTransformer;
-    private ViewPager.OnPageChangeListener mPageListener = null;
+
+    OnScrollChangeListener mScrollListener;
+    PageTransformer mPageTransformer;
+    OnPageChangeListener mPageListener = null;
 
     public PageScrollView(Context context) {
         super(context);
@@ -129,9 +135,9 @@ public class PageScrollView extends ViewGroup {
             mOrientation = attr.getInt(R.styleable.PageScrollView_android_orientation, mOrientation);
             mMiddleMargin = attr.getDimensionPixelSize(R.styleable.PageScrollView_middleMargin, mMiddleMargin);
             mSizeFixedPercent = attr.getFloat(R.styleable.PageScrollView_sizeFixedPercent, mSizeFixedPercent);
-            isPageViewStyle = attr.getBoolean(R.styleable.PageScrollView_pageViewStyle, isPageViewStyle);
-            mFloatViewStart = attr.getInt(R.styleable.PageScrollView_floatViewStart, mFloatViewStart);
-            mFloatViewEnd = attr.getInt(R.styleable.PageScrollView_floatViewEnd, mFloatViewEnd);
+            isViewPagerStyle = attr.getBoolean(R.styleable.PageScrollView_viewPagerStyle, isViewPagerStyle);
+            mFloatViewStart = attr.getInt(R.styleable.PageScrollView_floatViewStartIndex, mFloatViewStart);
+            mFloatViewEnd = attr.getInt(R.styleable.PageScrollView_floatViewEndIndex, mFloatViewEnd);
             isChildCenter = attr.getBoolean(R.styleable.PageScrollView_childCenter, isChildCenter);
             mOverFlingDistance = attr.getDimensionPixelSize(R.styleable.PageScrollView_overFlingDistance, mOverFlingDistance);
         }
@@ -144,7 +150,7 @@ public class PageScrollView extends ViewGroup {
     public void setOrientation(int orientation) {
         if (mOrientation != orientation && (orientation == HORIZONTAL || orientation == VERTICAL)) {
             mOrientation = orientation;
-            if (!isPageViewStyle) {
+            if (!isViewPagerStyle) {
                 boolean oldHorizontal = mOrientation == VERTICAL;
                 int scrollLength = oldHorizontal ? getScrollX() : getScrollY();
                 mCurrItem = resolveScrollViewFirstViewIndex(scrollLength, oldHorizontal);
@@ -156,7 +162,7 @@ public class PageScrollView extends ViewGroup {
                 mFloatViewEndIndex = -1;
                 mFloatViewEndMode = 0;
             }
-            mScrollInfo.set(mCurrItem, 0, 0, isPageViewStyle ? 1 : 0);
+            mScrollInfo.set(mCurrItem, 0, 0, isViewPagerStyle ? 1 : 0);
             scrollTo(0, 0);
             mAttachLayout = false;
             requestLayout();
@@ -207,11 +213,11 @@ public class PageScrollView extends ViewGroup {
         }
     }
 
-    public int getFloatViewStart() {
+    public int getFloatViewStartIndex() {
         return mFloatViewStart;
     }
 
-    public void setFloatViewStart(int floatStartIndex) {
+    public void setFloatViewStartIndex(int floatStartIndex) {
         if (mFloatViewStart != floatStartIndex) {
             resetFloatViewOffset(mFloatViewStartIndex, mOrientation == HORIZONTAL);
             mFloatViewStart = floatStartIndex;
@@ -225,11 +231,11 @@ public class PageScrollView extends ViewGroup {
         }
     }
 
-    public int getFloatViewEnd() {
+    public int getFloatViewEndIndex() {
         return mFloatViewEnd;
     }
 
-    public void setFloatViewEnd(int floatEndIndex) {
+    public void setFloatViewEndIndex(int floatEndIndex) {
         if (mFloatViewEnd != floatEndIndex) {
             resetFloatViewOffset(mFloatViewEndIndex, mOrientation == HORIZONTAL);
             mFloatViewEnd = floatEndIndex;
@@ -261,13 +267,13 @@ public class PageScrollView extends ViewGroup {
         return mOverFlingDistance;
     }
 
-    public boolean isPageViewStyle() {
-        return isPageViewStyle;
+    public boolean isViewPagerStyle() {
+        return isViewPagerStyle;
     }
 
-    public void setPageViewStyle(boolean pageViewStyle) {
-        if (isPageViewStyle != pageViewStyle) {
-            isPageViewStyle = pageViewStyle;
+    public void setViewPagerStyle(boolean viewPagerStyle) {
+        if (isViewPagerStyle != viewPagerStyle) {
+            isViewPagerStyle = viewPagerStyle;
         }
     }
 
@@ -320,32 +326,43 @@ public class PageScrollView extends ViewGroup {
         }
     }
 
-    public ViewPager.PageTransformer getPageTransformer() {
+    public PageTransformer getPageTransformer() {
         return mPageTransformer;
     }
 
-    public void setPageTransformer(ViewPager.PageTransformer transformer) {
+    public void setPageTransformer(PageTransformer transformer) {
         if (mPageTransformer != transformer) {
-            boolean needResetTransformer = mPageTransformer != null;
+            PageTransformer oldTransformer = mPageTransformer;
             mPageTransformer = transformer;
             if (mAttachLayout) {
-                if (needResetTransformer && mPageTransformer == null) {
-                    //TODO NEED CLEAN ANY PRE TRANSFORMER FOR ALL CHILD
-                    requestLayout();
+                if (oldTransformer != null && mPageTransformer == null) {
+                    boolean horizontal = mOrientation == HORIZONTAL;
+                    int count = getItemCount();
+                    for (int i = 0; i < count; i++) {
+                        oldTransformer.recoverTransformPage(getItemView(i), horizontal);
+                    }
                 }
                 if (mPageTransformer != null) {
-                    resolvePageOffset(mOrientation == HORIZONTAL ? getScrollX() : getScrollY(), getPageItemCount());
+                    resolvePageOffset(mOrientation == HORIZONTAL ? getScrollX() : getScrollY(), getItemCount());
                 }
             }
         }
     }
 
-    public ViewPager.OnPageChangeListener getPageListener() {
+    public OnPageChangeListener getPageChangeListener() {
         return mPageListener;
     }
 
-    public void setPageListener(ViewPager.OnPageChangeListener listener) {
+    public void setOnPageChangeListener(OnPageChangeListener listener) {
         mPageListener = listener;
+    }
+
+    public OnScrollChangeListener getScrollChangeListener() {
+        return mScrollListener;
+    }
+
+    public void setOnScrollChangeListener(OnScrollChangeListener l) {
+        mScrollListener = l;
     }
 
     public boolean hasPageHeaderView() {
@@ -369,7 +386,7 @@ public class PageScrollView extends ViewGroup {
     }
 
     protected OverScroller getScroller() {
-        if (isPageViewStyle) {
+        if (isViewPagerStyle) {
             if (mScrollerPageView == null) {
                 mScrollerPageView = new OverScroller(getContext(), new Interpolator() {
                     @Override
@@ -419,7 +436,7 @@ public class PageScrollView extends ViewGroup {
         return virtualCount;
     }
 
-    public int getPageItemCount() {
+    public int getItemCount() {
         int pageCount = mVirtualCount;
         if (pageCount == 0) {
             pageCount = mVirtualCount = getVirtualChildCount(true);
@@ -427,16 +444,16 @@ public class PageScrollView extends ViewGroup {
         return pageCount;
     }
 
-    public View getPageItemView(int index) {
+    public View getItemView(int index) {
         View result = null;
-        int pageCount = getPageItemCount();
+        int pageCount = getItemCount();
         if (index >= 0 && index < pageCount) {
             result = getVirtualChildAt(index, true);
         }
         return result;
     }
 
-    public int indexOfPageItemView(View view) {
+    public int indexOfItemView(View view) {
         if (view != null) {
             int virtualCount = 0;
             final int count = getChildCount();
@@ -988,7 +1005,7 @@ public class PageScrollView extends ViewGroup {
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         if (getChildCount() == 0 || !isEnabled()) {
-            mIsBeingDraged = false;
+            mIsBeingDragged = false;
         } else {
             final int action = ev.getAction() & MotionEventCompat.ACTION_MASK;
             if (action == MotionEvent.ACTION_MOVE) {
@@ -1002,12 +1019,12 @@ public class PageScrollView extends ViewGroup {
                 }
             }
         }
-        return mIsBeingDraged;
+        return mIsBeingDragged;
     }
 
     private void handleTouchActionMove(MotionEvent ev) {
         float x = ev.getX(), y = ev.getY();
-        if (mIsBeingDraged) {
+        if (mIsBeingDragged) {
             scrollDxDy((int) (mPointLast.x - x), (int) (mPointLast.y - y));
             mPointLast.set(x, y);
         } else {
@@ -1032,8 +1049,8 @@ public class PageScrollView extends ViewGroup {
     }
 
     private void handleTouchActionUp(MotionEvent ev) {
-        if (mIsBeingDraged) {
-            mIsBeingDraged = false;
+        if (mIsBeingDragged) {
+            mIsBeingDragged = false;
             mPointLast.x = ev.getX();
             mPointLast.y = ev.getY();
             int velocityX = 0, velocityY = 0;
@@ -1067,23 +1084,23 @@ public class PageScrollView extends ViewGroup {
     }
 
     private void markAsWillDragged() {
-        mIsBeingDraged = true;
+        mIsBeingDragged = true;
         ViewParent parent = getParent();
         if (parent != null) {
             parent.requestDisallowInterceptTouchEvent(true);
         }
-        setScrollState(ViewPager.SCROLL_STATE_DRAGGING);
+        setScrollState(SCROLL_STATE_DRAGGING);
     }
 
     private void markAsWillScroll() {
         mScrollerUsed = true;
-        setScrollState(ViewPager.SCROLL_STATE_SETTLING);
+        setScrollState(SCROLL_STATE_SETTLING);
         ViewCompat.postInvalidateOnAnimation(this);
     }
 
     private void markAsWillIdle() {
         mScrollerUsed = false;
-        setScrollState(ViewPager.SCROLL_STATE_IDLE);
+        setScrollState(SCROLL_STATE_IDLE);
     }
 
     public boolean isAttachLayoutFinished() {
@@ -1109,12 +1126,12 @@ public class PageScrollView extends ViewGroup {
             moved = movedY;
         }
         if (willScroll = isFlingAllowed(scroll, scrollRange, velocity)) {
-            if (isPageViewStyle) {
+            if (isViewPagerStyle) {
                 int targetIndex = mCurrItem;
                 int itemSize = horizontal ? getChildAt(mCurrItem).getWidth() : getChildAt(mCurrItem).getHeight();
                 int containerSize = horizontal ? (getWidth() - getPaddingLeft() - getPaddingRight()) : (getHeight() - getPaddingTop() - getPaddingBottom());
                 int absVelocity = velocity > 0 ? velocity : -velocity;
-                int pageItemCount = getPageItemCount();
+                int pageItemCount = getItemCount();
                 if (Math.abs(moved) > mMinDistance) {
                     int halfItemSize = itemSize / 2;
                     if (absVelocity > mMinimumVelocity) {
@@ -1159,7 +1176,7 @@ public class PageScrollView extends ViewGroup {
 
     public void scrollTo(int index, int offset, int duration) {
         if (mAttachLayout) {
-            scrollTo(getPageItemView(index), offset, duration, false);
+            scrollTo(getItemView(index), offset, duration, false);
         } else {
             if (index >= 0) {
                 mScrollInfo.set(index, offset, duration, 0);
@@ -1167,9 +1184,9 @@ public class PageScrollView extends ViewGroup {
         }
     }
 
-    public void scrollToCenter(int index, int offset, int duration) {
+    public void scrollToCentre(int index, int offset, int duration) {
         if (mAttachLayout) {
-            scrollTo(getPageItemView(index), offset, duration, true);
+            scrollTo(getItemView(index), offset, duration, true);
         } else {
             if (index >= 0) {
                 mScrollInfo.set(index, offset, duration, 1);
@@ -1178,7 +1195,7 @@ public class PageScrollView extends ViewGroup {
     }
 
     public void scrollTo(View child, int offset, int duration, boolean childCenter) {
-        int pageIndex = indexOfPageItemView(child);
+        int pageIndex = indexOfItemView(child);
         if (pageIndex == -1) return;
         if (mAttachLayout) {
             if (mScrollInfo.left >= 0) {
@@ -1233,7 +1250,7 @@ public class PageScrollView extends ViewGroup {
     private void scrollAfterLayout() {
         boolean needAdjustPageTransform = mPrevItem == -1;
         if (mScrollInfo.left >= 0) {
-            View pageView = getPageItemView(mScrollInfo.left);
+            View pageView = getItemView(mScrollInfo.left);
             if (pageView != null) {
                 scrollTo(pageView, mScrollInfo.top, mScrollInfo.right, 1 == mScrollInfo.bottom);
             }
@@ -1254,7 +1271,7 @@ public class PageScrollView extends ViewGroup {
                 resolvePageHeaderFooterOffset(scrollLength, horizontal);
             }
             if ((mPageListener != null || mPageTransformer != null)) {
-                resolvePageOffset(scrollLength, getPageItemCount());
+                resolvePageOffset(scrollLength, getItemCount());
             }
         }
     }
@@ -1349,7 +1366,7 @@ public class PageScrollView extends ViewGroup {
             mCurrItem = willItem;
             print(String.format("selectChanged  $$$$:%d >>>>>>>>> %d", preItem, mCurrItem));
             if (mPageListener != null) {
-                mPageListener.onPageSelected(willItem);
+                mPageListener.onPageSelected(willItem, preItem);
             }
             return true;
         }
@@ -1365,11 +1382,11 @@ public class PageScrollView extends ViewGroup {
                 mScrollListener.onScrollStateChanged(mScrollState, preState);
             }
             if (mPageListener != null) {
-                mPageListener.onPageScrollStateChanged(mScrollState);
+                mPageListener.onScrollStateChanged(mScrollState, preState);
             }
             if (mPageTransformer != null) {
                 // PageTransformers can do complex things that benefit from hardware layers.
-                enableLayers(newState != ViewPager.SCROLL_STATE_IDLE);
+                enableLayers(newState != SCROLL_STATE_IDLE);
             }
             return true;
         }
@@ -1395,7 +1412,7 @@ public class PageScrollView extends ViewGroup {
             resolveFloatViewOffset(scrollLength, horizontal);
         }
         if (mPageListener != null || mPageTransformer != null) {
-            resolvePageOffset(scrollLength, getPageItemCount());
+            resolvePageOffset(scrollLength, getItemCount());
         }
     }
 
@@ -1458,7 +1475,7 @@ public class PageScrollView extends ViewGroup {
         float viewTranslated;
         int wantTranslated;
         if (mFloatViewStartMode == FLOAT_VIEW_SCROLL) {
-            View view = getPageItemView(mFloatViewStartIndex);
+            View view = getItemView(mFloatViewStartIndex);
             PageScrollView.LayoutParams params = (LayoutParams) view.getLayoutParams();
             if (horizontal) {
                 wantTranslated = scrolled - (view.getLeft() + params.leftMargin);
@@ -1477,7 +1494,7 @@ public class PageScrollView extends ViewGroup {
             }
         }
         if (mFloatViewEndMode == FLOAT_VIEW_SCROLL) {
-            View view = getPageItemView(mFloatViewEndIndex);
+            View view = getItemView(mFloatViewEndIndex);
             PageScrollView.LayoutParams params = (LayoutParams) view.getLayoutParams();
             int scrollRange;
             if (horizontal) {
@@ -1583,7 +1600,7 @@ public class PageScrollView extends ViewGroup {
                         }
                     }
                     float transformerPosition = (scrollOffset - computeCenterScrollOffset(pageItemIndex, pageItemCount)) / (float) contentLength;
-                    mPageTransformer.transformPage(child, transformerPosition);
+                    mPageTransformer.transformPage(child, transformerPosition, horizontal);
                     translatedChildCount++;
                 } else {
                     if (translatedChildCount > 0) break;
@@ -1647,11 +1664,14 @@ public class PageScrollView extends ViewGroup {
 
         public LayoutParams(ViewGroup.MarginLayoutParams source) {
             super(source);
-        }
-
-        public LayoutParams(PageScrollView.LayoutParams source) {
-            super(source);
-            this.gravity = source.gravity;
+            if (source instanceof LinearLayout.LayoutParams) {
+                LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) source;
+                gravity = lp.gravity;
+            }
+            if (source instanceof PageScrollView.LayoutParams) {
+                PageScrollView.LayoutParams lp = (PageScrollView.LayoutParams) source;
+                gravity = lp.gravity;
+            }
         }
 
         public int getMarginHorizontal() {
@@ -1663,15 +1683,25 @@ public class PageScrollView extends ViewGroup {
         }
     }
 
+    public interface PageTransformer {
+        void transformPage(View view, float position, boolean horizontal);
+
+        void recoverTransformPage(View view, boolean horizontal);
+    }
+
     public interface OnScrollChangeListener {
+
         void onScrollChanged(int scrollX, int scrollY, int oldScrollX, int oldScrollY);
 
         void onScrollStateChanged(int state, int oldState);
+
     }
 
-    OnScrollChangeListener mScrollListener;
+    public interface OnPageChangeListener extends OnScrollChangeListener {
 
-    public void setOnScrollListener(OnScrollChangeListener l) {
-        mScrollListener = l;
+        void onPageScrolled(int position, float positionOffset, int positionOffsetPixels);
+
+        void onPageSelected(int position, int oldPosition);
+
     }
 }

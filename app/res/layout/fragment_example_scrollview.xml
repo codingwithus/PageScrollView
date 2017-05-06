@@ -58,11 +58,11 @@
         android:gravity="center"
         android:orientation="vertical"
         rexy:childCenter="true"
-        rexy:floatViewEnd="-1"
-        rexy:floatViewStart="-1"
+        rexy:floatViewEndIndex="-1"
+        rexy:floatViewStartIndex="-1"
         rexy:middleMargin="10dp"
         rexy:overFlingDistance="20dp"
-        rexy:pageViewStyle="false"
+        rexy:viewPagerStyle="false"
         rexy:sizeFixedPercent="0">
         <include layout="@layout/scrollview_child" />
     </com.rexy.widget.PageScrollView>

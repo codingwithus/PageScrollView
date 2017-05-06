@@ -77,13 +77,13 @@
         android:gravity="center"
         android:orientation="horizontal"
         rexy:childCenter="true"
-        rexy:floatViewEnd="-1"
-        rexy:floatViewStart="-1"
+        rexy:floatViewEndIndex="-1"
+        rexy:floatViewStartIndex="-1"
         rexy:middleMargin="10dp"
         rexy:overFlingDistance="0dp"
-        rexy:pageViewStyle="true"
+        rexy:viewPagerStyle="true"
         rexy:sizeFixedPercent="0">
-        <include layout="@layout/viewpage_child" />
+        <include layout="@layout/viewpager_child" />
     </com.rexy.widget.PageScrollView>
 </LinearLayout>
 
