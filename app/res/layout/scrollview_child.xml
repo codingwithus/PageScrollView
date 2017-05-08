@@ -16,9 +16,9 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
         android:minHeight="250dp"
         android:minWidth="250dp"
+        android:gravity="center"
         android:text="scroll index 1"
         android:textColor="#E5E5E5"
         android:textSize="25sp"

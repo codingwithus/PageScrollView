@@ -502,17 +502,25 @@ public class PageScrollView extends ViewGroup {
         if (mVirtualCount > 0) {
             final int measureSpecWidth = translateMeasure(widthMeasureSpec, paddingHorizontal + headerExtraWidth, !horizontal);
             final int measureSpecHeight = translateMeasure(heightMeasureSpec, paddingVertical + headerExtraHeight, horizontal);
-            int fixedSize = 0;
+            int fixedSize = 0, scrollParentRealSize;
+            /**
+             int specMode = MeasureSpec.getMode(spec);
+             int specSize = MeasureSpec.getSize(spec);
+             int size = limitedSize ? Math.max(0, specSize - padding) : Integer.MAX_VALUE;
+             return MeasureSpec.makeMeasureSpec(size, specMode);
+             */
             if (horizontal) {
+                scrollParentRealSize = Math.max(0, MeasureSpec.getSize(widthMeasureSpec) - paddingHorizontal);
                 if (mSizeFixedPercent > 0 && mSizeFixedPercent <= 1) {
                     fixedSize = (int) (MeasureSpec.getSize(widthMeasureSpec) * mSizeFixedPercent);
                 }
-                childState = measureMiddleViewHorizontal(measureSpecWidth, measureSpecHeight, fixedSize) | childState;
+                childState = measureMiddleViewHorizontal(measureSpecWidth, measureSpecHeight, fixedSize, scrollParentRealSize) | childState;
             } else {
+                scrollParentRealSize = Math.max(0, MeasureSpec.getSize(heightMeasureSpec) - paddingVertical);
                 if (mSizeFixedPercent > 0 && mSizeFixedPercent <= 1) {
                     fixedSize = (int) (MeasureSpec.getSize(heightMeasureSpec) * mSizeFixedPercent);
                 }
-                childState = measureMiddleViewVertical(measureSpecWidth, measureSpecHeight, fixedSize) | childState;
+                childState = measureMiddleViewVertical(measureSpecWidth, measureSpecHeight, fixedSize, scrollParentRealSize) | childState;
             }
         }
         int maxWidth = Math.max(mContentWidth + paddingHorizontal, getSuggestedMinimumWidth());
@@ -575,9 +583,9 @@ public class PageScrollView extends ViewGroup {
         return scrollOk;
     }
 
-    protected int measureMiddleViewHorizontal(int widthMeasureSpec, int heightMeasureSpec, int fixedSize) {
+    protected int measureMiddleViewHorizontal(int widthMeasureSpec, int heightMeasureSpec, int childFixedSize, final int parentRealSize) {
         final int childCount = getChildCount();
-        int childFixedWidthSpec = fixedSize <= 0 ? 0 : MeasureSpec.makeMeasureSpec(fixedSize, MeasureSpec.EXACTLY);
+        int childFixedWidthSpec = childFixedSize <= 0 ? 0 : MeasureSpec.makeMeasureSpec(childFixedSize, MeasureSpec.EXACTLY);
         int contentWidth = 0;
         int contentHeight = 0;
         int measuredCount = 0;
@@ -589,8 +597,8 @@ public class PageScrollView extends ViewGroup {
             PageScrollView.LayoutParams params = (PageScrollView.LayoutParams) child.getLayoutParams();
             int childMarginHorizontal = params.getMarginHorizontal();
             int childMarginVertical = params.getMarginVertical();
-            int childWidthSpec = childFixedWidthSpec == 0 ? getChildMeasureSpec(widthMeasureSpec, childMarginHorizontal, params.width) : childFixedWidthSpec;
-            int childHeightSpec = getChildMeasureSpec(heightMeasureSpec, childMarginVertical, params.height);
+            int childWidthSpec = childFixedWidthSpec == 0 ? getMiddleChildMeasureSpec(widthMeasureSpec, parentRealSize, childMarginHorizontal, params.width) : childFixedWidthSpec;
+            int childHeightSpec = getMiddleChildMeasureSpec(heightMeasureSpec, parentRealSize, childMarginVertical, params.height);
             child.measure(childWidthSpec, childHeightSpec);
             if (mMiddleMargin > 0 && measuredCount > 0) {
                 contentWidth += mMiddleMargin;
@@ -608,9 +616,9 @@ public class PageScrollView extends ViewGroup {
         return childState;
     }
 
-    protected int measureMiddleViewVertical(int widthMeasureSpec, int heightMeasureSpec, final int fixedSize) {
+    protected int measureMiddleViewVertical(int widthMeasureSpec, int heightMeasureSpec, int childFixedSize, int parentRealSize) {
         final int childCount = getChildCount();
-        int childFixedHeightSpec = fixedSize <= 0 ? 0 : MeasureSpec.makeMeasureSpec(fixedSize, MeasureSpec.EXACTLY);
+        int childFixedHeightSpec = childFixedSize <= 0 ? 0 : MeasureSpec.makeMeasureSpec(childFixedSize, MeasureSpec.EXACTLY);
         int contentWidth = 0;
         int contentHeight = 0;
         int measuredCount = 0;
@@ -622,8 +630,8 @@ public class PageScrollView extends ViewGroup {
             PageScrollView.LayoutParams params = (PageScrollView.LayoutParams) child.getLayoutParams();
             int childMarginHorizontal = params.getMarginHorizontal();
             int childMarginVertical = params.getMarginVertical();
-            int childWidthSpec = getChildMeasureSpec(widthMeasureSpec, childMarginHorizontal, params.width);
-            int childHeightSpec = childFixedHeightSpec == 0 ? getChildMeasureSpec(heightMeasureSpec, childMarginVertical, params.height) : childFixedHeightSpec;
+            int childWidthSpec = getMiddleChildMeasureSpec(widthMeasureSpec, parentRealSize, childMarginHorizontal, params.width);
+            int childHeightSpec = childFixedHeightSpec == 0 ? getMiddleChildMeasureSpec(heightMeasureSpec, parentRealSize, childMarginVertical, params.height) : childFixedHeightSpec;
             child.measure(childWidthSpec, childHeightSpec);
             if (mMiddleMargin > 0 && measuredCount > 0) {
                 contentHeight += mMiddleMargin;
@@ -1679,6 +1687,13 @@ public class PageScrollView extends ViewGroup {
             return child - my;
         }
         return n;
+    }
+
+    public static int getMiddleChildMeasureSpec(int spec, int parentSize, int padding, int childDimension) {
+        if (ViewGroup.LayoutParams.MATCH_PARENT == childDimension && parentSize > 0) {
+            childDimension = parentSize;
+        }
+        return getChildMeasureSpec(spec, padding, childDimension);
     }
 
     @Override
