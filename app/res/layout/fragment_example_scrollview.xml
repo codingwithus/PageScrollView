@@ -57,6 +57,7 @@
         android:background="#5C6BC2"
         android:gravity="center"
         android:orientation="vertical"
+        android:scrollbars="horizontal|vertical"
         rexy:childCenter="true"
         rexy:floatViewEndIndex="-1"
         rexy:floatViewStartIndex="-1"

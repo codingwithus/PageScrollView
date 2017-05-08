@@ -126,7 +126,7 @@ public class PageScrollView extends ViewGroup {
         mMinDistance = (int) (25 * density);
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
         mOverFlingDistance = configuration.getScaledOverflingDistance() * 2;
-
+        setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         TypedArray attr = attributeSet == null ? null : context.obtainStyledAttributes(attributeSet, R.styleable.PageScrollView);
         if (attr != null) {
             mGravity = attr.getInt(R.styleable.PageScrollView_android_gravity, mGravity);
@@ -1247,6 +1247,25 @@ public class PageScrollView extends ViewGroup {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <p>This version also clamps the scrolling to the bounds of our child.
+     */
+    @Override
+    public void scrollTo(int x, int y) {
+        // we rely on the fact the View.scrollBy calls scrollTo.
+        if (mVirtualCount > 0) {
+            int scrollX = getScrollX();
+            int scrollY = getScrollY();
+            x = clamp(x, getWidth() - (getPaddingLeft() + getPaddingRight()), mContentWidth);
+            y = clamp(y, getHeight() - (getPaddingTop() + getPaddingBottom()), mContentHeight);
+            if (x != scrollX || y != scrollY) {
+                super.scrollTo(x, y);
+            }
+        }
+    }
+
     private void scrollAfterLayout() {
         boolean needAdjustPageTransform = mPrevItem == -1;
         if (mScrollInfo.left >= 0) {
@@ -1396,6 +1415,9 @@ public class PageScrollView extends ViewGroup {
     @Override
     protected void onScrollChanged(int l, int t, int ol, int ot) {
         super.onScrollChanged(l, t, ol, ot);
+        if (mScrollState != SCROLL_STATE_IDLE) {
+            awakenScrollBars();
+        }
         if (mScrollListener != null) {
             mScrollListener.onScrollChanged(l, t, ol, ot);
         }
@@ -1611,12 +1633,52 @@ public class PageScrollView extends ViewGroup {
     }
 
     @Override
+    public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+        if (disallowIntercept) {
+            if (mVelocityTracker != null) {
+                mVelocityTracker.recycle();
+                mVelocityTracker = null;
+            }
+        }
+        super.requestDisallowInterceptTouchEvent(disallowIntercept);
+    }
+    @Override
     public void removeAllViewsInLayout() {
         super.removeAllViewsInLayout();
         mCurrItem = 0;
         mPrevItem = -1;
         mAttachLayout = false;
         mScrollInfo.set(-1, -1, -1, -1);
+    }
+
+    private static int clamp(int n, int my, int child) {
+        if (my >= child || n < 0) {
+            /* my >= child is this case:
+             *                    |--------------- me ---------------|
+             *     |------ child ------|
+             * or
+             *     |--------------- me ---------------|
+             *            |------ child ------|
+             * or
+             *     |--------------- me ---------------|
+             *                                  |------ child ------|
+             *
+             * n < 0 is this case:
+             *     |------ me ------|
+             *                    |-------- child --------|
+             *     |-- mScrollX --|
+             */
+            return 0;
+        }
+        if ((my + n) > child) {
+            /* this case:
+             *                    |------ me ------|
+             *     |------ child ------|
+             *     |-- mScrollX --|
+             */
+            return child - my;
+        }
+        return n;
     }
 
     @Override
